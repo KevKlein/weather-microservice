@@ -1,9 +1,21 @@
 const http = require('http');
 
+/** 
+ * ===Test client demonstrating how to call microservice===
+ * Change the postData values for your query.
+ * State and Country can be written out or abbreviated as state/country codes. 
+ *   See https://www.countrycode.org/ for country codes.
+ *   State is optional, leave as '' if not applicable.
+ * Dates should be written in 'YYYY-MM-DD' format.
+ * History data will be from the previous year (2024).
+ * Forecast data for days beyond the next 14 days will be unavailable.
+ *   Entries will thus have status: 'OK' or status: 'unavailable'.
+*/
 const postData = JSON.stringify({
-  city: 'london',
-  state: 'oh',
-  country: 'usa',
+  // Change these values for your query
+  city: 'Corvallis',
+  state: 'OR',
+  country: 'US',
   startDate: '2025-05-31',
   endDate: '2025-06-04'
 });
@@ -40,6 +52,7 @@ const req = http.request(options, (res) => {
       return;
     }
 
+    // Display results in the console
     console.log('Location:', payload.location);
     console.log('Forecast:', payload.forecast);
     console.log('History :', payload.history);

@@ -2,6 +2,7 @@ const  { createServer } = require('http');
 
 const apiKey = '0af16c3db66bb3520fcd39ef0e56ba9a'; // openweathermap.org API key
 
+
 /** Get lat and lon by geocoding location using https://www.openweathermap.org.
  *  Takes city, state, country as parameters. State and country can be blank.
  *  State and country can be written out, or abbreviated to state code
@@ -55,12 +56,14 @@ async function getWeatherData(lat, lon, startDate, endDate) {
     const forecastURL = 
         `https://api.open-meteo.com/v1/forecast?`+
         `latitude=${lat}&longitude=${lon}` +
-        `&daily=${forecastMetrics}&timezone=auto&forecast_days=14`;
+        `&daily=${forecastMetrics}&timezone=auto&forecast_days=14` +
+        `&temperature_unit=fahrenheit&precipitation_unit=inch`;
     const historicalURL = 
         `https://archive-api.open-meteo.com/v1/archive?` +
         `latitude=${lat}&longitude=${lon}` +
         `&start_date=${pastYear(startDate)}&end_date=${pastYear(endDate)}` +
-        `&daily=${historicalMetrics}&timezone=auto`;
+        `&daily=${historicalMetrics}&timezone=auto` +
+        `&temperature_unit=fahrenheit&precipitation_unit=inch`;
 
     // Fetch weather data
     try {
@@ -82,6 +85,12 @@ async function getWeatherData(lat, lon, startDate, endDate) {
     }
 }
 
+/* Returns whether the given date string matches YYYY-MM-DD */
+function isValidDate(dateStr) {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    return regex.test(dateStr);
+}
+
 /** 
  * Returns the given date but with the year prior to now. 
  * Date should be in YYYY-MM-DD format.
@@ -96,6 +105,7 @@ function parseWeatherData(rawData) {
     const days = rawData.daily.time;
     const data = days.map((day, i) => ({
         day,
+        status: 'OK',
         tempMin: rawData.daily.temperature_2m_min[i],
         tempMax: rawData.daily.temperature_2m_max[i],
         apparentTempMin: rawData.daily.apparent_temperature_min[i],
@@ -111,6 +121,35 @@ function parseWeatherData(rawData) {
     return data;
 }
 
+/** 
+ * Return list of forecast entries in date range, 
+ * with a dummy entry if there's no data for a date, like
+ * {date: '2025-7-01', status: 'unavailable'} .
+ */
+function filterForecast(parsedForecast, startDate, endDate) {
+    // Get range of dates
+    const forecastByDay = new Map();
+    parsedForecast.forEach(entry => {
+        forecastByDay.set(entry.day, entry);
+    });
+    // For each date in range, include forecast entry if there is one, else dummy entry.
+    const result = [];
+    let current = new Date(startDate);
+    const last = new Date(endDate);
+    while (current <= last) {
+        const dayStr = current.toISOString().split("T")[0]; // format: YYYY-MM-DD
+        if (forecastByDay.has(dayStr)) {
+            result.push(forecastByDay.get(dayStr));
+        } else {
+            result.push({ day: dayStr, status: "unavailable" });
+        }
+        current.setDate(current.getDate() + 1);
+    }
+
+    return result;
+}
+
+
 
 /**
  * Set up server
@@ -118,16 +157,27 @@ function parseWeatherData(rawData) {
 const server = createServer(async (req, res) => {
     if (req.method !== 'POST' || req.url !== '/fetchWeatherData') {
         res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid request to server' }));
+        return res.end(JSON.stringify({ error: 'Invalid request to server' }));
     }
 
-    // Parse request JSON
+    // Parse request JSON, do some validation
     let body = '';
     for await (const chunk of req) { body += chunk; }
-    let payload;
+    let payload, city, state, country, startDate, endDate;
     try {
         payload = JSON.parse(body);
-        console.log("client sent: ", payload);
+        ({ city, state, country, startDate, endDate } = payload)
+        console.log(
+            `Client sent - city: ${city}, state: ${state}, country: ${country}, ` +
+            `startDate: ${startDate}, endDate: ${endDate}`);
+        if (!city || !startDate || !endDate) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: 'Missing required field'}));
+        }
+        if (!isValidDate(startDate) || !isValidDate(endDate)){
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: `Invalid date format. Dates should be 'YYYY-MM'DD`}));
+        }
     } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         return res.end(JSON.stringify({ error: 'Invalid JSON' }));
@@ -135,42 +185,40 @@ const server = createServer(async (req, res) => {
 
     // Geocode location via API
     let coordData = {};
-    coordData = await getCoordData(payload.city, payload.state, payload.country);
-    // console.log("coords: ", coordData);
-    if (!coordData || coordData.length === 0) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        return res.end("Error geocoding location.");
+    coordData = await getCoordData(city, state, country);
+    if (!coordData || coordData.length === 0 || !coordData[0].lat || !coordData[0].lon) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: `Couldn't get coordinates for ${city}, ${state}, ${country}. Please check city/state/country.`}));
     }
     const { lat, lon } = coordData[0];
 
     // Get forecast and historical data via API
     let weatherData = {};
-    // console.log("coordData: ", lat, lon, payload.startDate, payload.endDate);
-    weatherData = await getWeatherData(lat, lon, payload.startDate, payload.endDate)
-    if (!weatherData || weatherData.length === 0) {
+    weatherData = await getWeatherData(lat, lon, startDate, endDate)
+    if (!weatherData || weatherData.length === 0 || !weatherData.forecast || !weatherData.history) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
-        return res.end("Error getting weather data.");
+        return res.end(JSON.stringify({ error: "Error getting weather data."}));
     }
 
     // Parse weather data, only keep forecast data from dates in given range
     const parsedForecast = parseWeatherData(weatherData.forecast);
-    const filteredForecast = parsedForecast.filter((row) => (payload.startDate <= row.day && row.day <= payload.endDate));
-    console.log('parsedForecast: ', parsedForecast);
-    console.log('filteredForecast: ', filteredForecast);
+    const filteredForecast = filterForecast(parsedForecast, startDate, endDate);
     const parsedHistory = parseWeatherData(weatherData.history);
 
     // Send response back to client
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({
+    responseBody = {
         location: coordData,
         forecast: filteredForecast,
         history: parsedHistory
-    }));
+    };
+    console.log('Server sending: ', responseBody);
+    return res.end(JSON.stringify(responseBody));
 });
 
 
-// Bind server to endpoint
+/* Bind server to endpoint */
 const PORT = 36199;
 server.listen(PORT, () => {
-  console.log(`Microservice A - Weather Service running at http://localhost:${PORT}`);
+    console.log(`Microservice A - Weather Service running at http://localhost:${PORT}`);
 });
