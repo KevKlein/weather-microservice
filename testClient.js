@@ -16,8 +16,8 @@ const postData = JSON.stringify({
   city: 'Corvallis',
   state: 'OR',
   country: 'US',
-  startDate: '2025-05-31',
-  endDate: '2025-06-04'
+  startDate: '2025-06-01',
+  endDate: '2025-06-02'
 });
 
 const options = {
@@ -53,6 +53,7 @@ const req = http.request(options, (res) => {
     }
 
     // Display results in the console
+    console.log('Received from server: ');
     console.log('Location:', payload.location);
     console.log('Forecast:', payload.forecast);
     console.log('History :', payload.history);

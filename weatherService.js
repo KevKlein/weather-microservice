@@ -38,9 +38,7 @@ async function getWeatherData(lat, lon, startDate, endDate) {
         'temperature_2m_min',
         'precipitation_probability_max',
         'precipitation_sum',
-        'precipitation_hours',
-        'apparent_temperature_max',
-        'apparent_temperature_min'
+        'precipitation_hours'
     ].join();
     const historicalMetrics = [
         'weather_code',
@@ -48,8 +46,6 @@ async function getWeatherData(lat, lon, startDate, endDate) {
         'temperature_2m_min',
         'precipitation_sum',
         'precipitation_hours',
-        'apparent_temperature_max',
-        'apparent_temperature_min'
     ].join();
 
     // URLs
@@ -108,8 +104,6 @@ function parseWeatherData(rawData) {
         status: 'OK',
         tempMin: rawData.daily.temperature_2m_min[i],
         tempMax: rawData.daily.temperature_2m_max[i],
-        apparentTempMin: rawData.daily.apparent_temperature_min[i],
-        apparentTempMax: rawData.daily.apparent_temperature_max[i],
         weatherCode: rawData.daily.weather_code[i],
         precipSum: rawData.daily.precipitation_sum[i],
         precipHours: rawData.daily.precipitation_hours[i],
@@ -213,7 +207,10 @@ const server = createServer(async (req, res) => {
         history: parsedHistory
     };
     console.log('Server sending: ', responseBody);
-    return res.end(JSON.stringify(responseBody));
+    res.end(JSON.stringify(responseBody));
+    console.log('Awaiting request from client...\n');
+    return;
+
 });
 
 
