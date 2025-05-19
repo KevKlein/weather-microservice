@@ -115,4 +115,4 @@ const req = http.request(options, (res) => {
 
 
 ==== UML Sequence Diagram ====
-(UML_sequence_diagram.png)
+![UML sequence diagram](UML_sequence_diagram.png)
