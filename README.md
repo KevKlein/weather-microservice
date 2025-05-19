@@ -1,5 +1,5 @@
 ==== SETUP ====
-Installation:
+
 (No npm installation required.)
 
 Geocoding API key:
@@ -12,8 +12,8 @@ Currently, you don't need one to use URL API from open-meteo.
 
 
 
-
 ==== HOW TO REQUEST DATA ====
+
 Start the microservice.
     node weatherService.js
 
@@ -32,6 +32,7 @@ See the example below about how to handle setting up the request and options,
 and send the POST request.
 
 == EXAMPLE ==
+
 const http = require('http');
 
 // Prepare request payload
@@ -69,8 +70,8 @@ req.end();
 
 
 
-
 ==== HOW TO RECEIVE DATA ====
+
 After sending the request, your program will automatically receive a response 
 from the microservice. The response will be in JSON format and includes 
 the geocoded location (to confirm to you that it got the right location), 
@@ -115,4 +116,5 @@ const req = http.request(options, (res) => {
 
 
 ==== UML Sequence Diagram ====
+
 ![UML sequence diagram](UML_sequence_diagram.png)
