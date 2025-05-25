@@ -1,4 +1,4 @@
-==== SETUP ====
+# SETUP
 
 (No npm installation required.)
 
@@ -11,8 +11,7 @@ Weather data API key:
 Currently, you don't need one to use URL API from open-meteo.
 
 
-
-==== HOW TO REQUEST DATA ====
+# HOW TO REQUEST DATA
 
 Start the microservice.
     node weatherService.js
@@ -31,7 +30,7 @@ The POST body should be a JSON such as the following, containing these fields:
 See the example below about how to handle setting up the request and options,
 and send the POST request.
 
-== EXAMPLE ==
+## EXAMPLE
 
 const http = require('http');
 
@@ -69,8 +68,7 @@ req.write(postData);
 req.end();
 
 
-
-==== HOW TO RECEIVE DATA ====
+# HOW TO RECEIVE DATA
 
 After sending the request, your program will automatically receive a response 
 from the microservice. The response will be in JSON format and includes 
@@ -80,7 +78,7 @@ forecast data, and historical weather data.
 See the example below to handle the response, check for errors, and 
 parse the JSON payload.
 
-== EXAMPLE ==
+## EXAMPLE
 
 // This is the same req as above, but filled in.
 const req = http.request(options, (res) => {
@@ -97,7 +95,6 @@ const req = http.request(options, (res) => {
       }
       return;
     }
-    
     // Parse data
     try {
       parsedData = JSON.parse(data);
@@ -114,7 +111,6 @@ const req = http.request(options, (res) => {
 });
 
 
-
-==== UML Sequence Diagram ====
+# UML Sequence Diagram
 
 ![UML sequence diagram](UML_sequence_diagram.png)
