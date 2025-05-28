@@ -19,6 +19,7 @@ Start the microservice.
 Send a POST to this endpoint:
 http://localhost:36199/fetchWeatherData
 The POST body should be a JSON such as the following, containing these fields:
+```
 {
   city: 'Corvallis',
   state: 'OR',                 // can be written out or abbreviated, or left as empty string
@@ -26,12 +27,12 @@ The POST body should be a JSON such as the following, containing these fields:
   startDate: '2025-05-31',     // 'YYYY-MM-DD' format
   endDate: '2025-06-04'        // 'YYYY-MM-DD' format
 }
-
+```
 See the example below about how to handle setting up the request and options,
 and send the POST request.
 
 ## EXAMPLE
-
+```
 const http = require('http');
 
 // Prepare request payload
@@ -66,7 +67,7 @@ req.on('error', (e) => {
 
 req.write(postData);
 req.end();
-
+```
 
 # HOW TO RECEIVE DATA
 
@@ -79,7 +80,7 @@ See the example below to handle the response, check for errors, and
 parse the JSON payload.
 
 ## EXAMPLE
-
+```
 // This is the same req as above, but filled in.
 const req = http.request(options, (res) => {
   // Receive payload
@@ -109,7 +110,7 @@ const req = http.request(options, (res) => {
     }
   });
 });
-
+```
 
 # UML Sequence Diagram
 
