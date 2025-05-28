@@ -1,6 +1,6 @@
 const  { createServer } = require('http');
 
-const apiKey = '0af16c3db66bb3520fcd39ef0e56ba9a'; // openweathermap.org API key
+const apiKey = YOUR_API_KEY_HERE; // get an API key from openweathermap.org
 
 
 /** Get lat and lon by geocoding location using https://www.openweathermap.org.
